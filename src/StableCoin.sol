@@ -22,10 +22,10 @@ contract StableCoin  is ERC20Burnable, Ownable{
     error StableCoin__BurnAmountExceedsBalance();
     error StableCoin__NotZeroAddress();
 
-     address owner;
-
+     
+    
   
-    constructor() ERC20("Stablecoin", "STBL")Ownable(owner){
+    constructor() ERC20("Stablecoin", "STBL")Ownable(msg.sender){
     }
 
     function burn(uint256 _amount) public override onlyOwner {
