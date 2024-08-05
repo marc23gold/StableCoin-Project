@@ -10,9 +10,14 @@ pragma solidity ^0.8.0;
  * 
  */
 
-contract DSCEngine {
+import {StableCoin} from "./StableCoin.sol";
+import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
+
+contract DSCEngine is ReentrancyGuard{
     //errors
     error DSCEngine__NeedsMoreThanZero();
+    error DSCEngine__TokenAddressesAndPriceFeedAddressesDoNotMatch();
+    error DSCEngine__TokenNotSupported();
 
     //modifiers
     modifier moreThanZero(uint256 amount) {
@@ -21,7 +26,39 @@ contract DSCEngine {
         }
         _;
     }
+
+    //state variables
+    mapping (address token => address priceFeed) private s_priceFeeds;
+    mapping (address user => mapping(address => uint256 amount)) private s_collateralDeposited;
+
+    StableCoin immutable private i_dsc; 
+
+    
+
+    modifier isAllowedToken(address token) {
+        if(s_priceFeeds[token] == address(0)) {
+            revert DSCEngine__TokenNotSupported();  
+        }
+        _;
+    } 
+
+    //functions
+    constructor(address[] memory tokenAddresses, address[] memory priceFeedAddresses,
+    address dscAddress) {
+        //USD Price Feeds
+        if(tokenAddresses.length != priceFeedAddresses.length) {
+            revert DSCEngine__TokenAddressesAndPriceFeedAddressesDoNotMatch();
+        }
+        //loop through the price feeds and add them to the mapping
+        for(uint256 i = 0; i < tokenAddresses.length; i++) {
+            s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+        }
+
+        i_dsc = StableCoin(dscAddress);
+    }
+
     function depositCollateralAndMintDSC() external{
+        
     }
 
     /**
@@ -30,8 +67,14 @@ contract DSCEngine {
      * @param amountCollateral The amount of the token to be deposited as collateral
      */
 
-    function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral) external {
-
+    function depositCollateral(
+        address tokenCollateralAddress, 
+        uint256 amountCollateral) 
+        moreThanZero(amountCollateral) 
+        isAllowedToken( tokenCollateralAddress)
+        nonReentrant
+        external {
+        
     }
 
     function redeemCollateralForDsc() external{
