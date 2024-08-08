@@ -12,6 +12,7 @@ pragma solidity ^0.8.0;
 import {StableCoin} from "./StableCoin.sol";
 import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "lib/chainlink-brownie-contracts/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract DSCEngine is ReentrancyGuard {
     //errors
@@ -19,6 +20,8 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenAddressesAndPriceFeedAddressesDoNotMatch();
     error DSCEngine__TokenNotSupported();
     error DSCEngine__TransferFailed();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__MintFailed();
 
     //modifiers
     modifier moreThanZero(uint256 amount) {
@@ -29,6 +32,14 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     //state variables
+
+    uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
+    uint256 private constant PRECISION = 1e18;
+    uint256 private constant LIQUIDATION_THRESHOLD = 50; //200% overcollataralized 
+    uint256 private constant LIQUIDATION_PRECISION = 100;
+    uint256 private constant MIN_HEALTH_FACTOR = 1; //1 is the minimum health factor 
+
+
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address user => mapping(address => uint256 amount)) private s_collateralDeposited;
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
@@ -99,11 +110,30 @@ contract DSCEngine is ReentrancyGuard {
             s_dscMinted[msg.sender] += amountDscMint;
             //check: if they minted too much
             _revertIfHealthFactorIsBroken(msg.sender);
+            bool minted = i_dsc.mint(msg.sender, amountDscMint);
+            if(!minted) {
+                revert DSCEngine__MintFailed();
+            } 
     }
 
-    function getAccountCollateralValue(address user) public view returns (uint256) {
+    function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueinUsd) {
         //loop through each collateral token, get the amount they have deposited, and map it to
         //the price, to get the USD value of the collateral 
+        for(uint256 i = 0; i < s_collateralTokens.length; i++) {
+            address token = s_collateralTokens[i];
+            uint256 amount = s_collateralDeposited[user][token];
+            totalCollateralValueinUsd += getUsdValue(token, amount);
+        }
+        return totalCollateralValueinUsd;
+    }
+
+    function getUsdValue(address token, uint256 amount) public view returns(uint256) {
+        //going to do some pricefeed stuff 
+        //get the price feed for the token and times the amount by the price
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        (,int256 price,,,) = priceFeed.latestRoundData();
+        //let's say 1 ETH = 1000 USD the returned value will be 1000 * 1e8
+        return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
 
     function _getAccountInformation(address user) private view returns(uint256 totalDscMinted, uint256 collaterialValueInUsd) {
@@ -111,7 +141,7 @@ contract DSCEngine is ReentrancyGuard {
         //total DSC minted
         //total collateral value in USD
         totalDscMinted = s_dscMinted[user];
-        collateralvalueInUsd = getAccountCollateralValue(user);
+        collaterialValueInUsd = getAccountCollateralValue(user);
     }
 
     /**
@@ -126,11 +156,18 @@ contract DSCEngine is ReentrancyGuard {
 
       //total collateral deposited 
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustedForThreshold * PRECISION) / totalDscMinted;
+        //return (collateralValueInUsd / totalDscMinted);
     }
 
     function _revertIfHealthFactorIsBroken(address user) internal view{
         //Check collateral value factor
         //revert if they don't have a healthy value factor
+        uint256 userHealthFactor = _healthFactor(user);
+        if(userHealthFactor < MIN_HEALTH_FACTOR) {
+            revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+        }
     }
 
     function burnDsc() external {}
