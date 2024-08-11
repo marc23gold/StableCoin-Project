@@ -1,66 +1,30 @@
-## Foundry
+# Foobar
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+This is a decentralized coin project and defi protocol. This project can deploy a smart contract onto the Ethereum blockchain and act as the "backend" to the defi protocol. 
 
-Foundry consists of:
+## Installation
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This repository uses Foundry. In order to install foundry run the following command:
 
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+curl -L https://foundry.paradigm.xyz | bash
 ```
 
-### Test
+Then clone this repo using the git clone command:
 
-```shell
-$ forge test
+```git
+git clone 
 ```
 
-### Format
 
-```shell
-$ forge fmt
-```
 
-### Gas Snapshots
+## Contributing
 
-```shell
-$ forge snapshot
-```
+Pull requests are welcome. For major changes, please open an issue first
+to discuss what you would like to change.
 
-### Anvil
+Please make sure to update tests as appropriate.
 
-```shell
-$ anvil
-```
+## License
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+[MIT](https://choosealicense.com/licenses/mit/)

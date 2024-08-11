@@ -251,6 +251,7 @@ contract DSCEngine is ReentrancyGuard {
         //We should implement a feature to liquidate in the event the protocol is insolvent 
         //And sweep extra amounts into a treasury 
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUDATION_BONUS) / LIQUIDATION_PRECISION;
+        uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
 
     }
 
