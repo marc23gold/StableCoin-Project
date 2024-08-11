@@ -11,7 +11,7 @@ import {ERC20Mock} from "lib/openzeppelin-contracts/contracts/mocks/token/ERC20M
 
 contract DSCEngineTest is Test {
     DeployDSC deployer;
-    StableCoin dsc;   
+    StableCoin dsc;
     DSCEngine dsce;
     HelperConfig config;
     address wethUsdPriceFeed;
@@ -20,12 +20,10 @@ contract DSCEngineTest is Test {
     address public USER = makeAddr("user");
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
 
-    
-
     function setUp() public {
         deployer = new DeployDSC();
         (dsc, dsce, config) = deployer.run();
-        (wethUsdPriceFeed,,weth,,) = config.activeNetworkConfig();
+        (wethUsdPriceFeed,, weth,,) = config.activeNetworkConfig();
     }
 
     // Price tests
@@ -33,7 +31,7 @@ contract DSCEngineTest is Test {
         uint256 ethAmount = 15e18;
         uint256 expectedUsd = 30000e18;
         uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
-        assertEq(actualUsd, expectedUsd);   
+        assertEq(actualUsd, expectedUsd);
     }
 
     // Deposit collateral tests
