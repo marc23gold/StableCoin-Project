@@ -45,6 +45,7 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
 
     event CollaterialDeposited(address indexed user, address indexed token, uint256 indexed amountCollateral);
+    event CollaterialRemoved(address indexed user, address indexed token, uint256 indexed amountCollateral);
 
     StableCoin private immutable i_dsc;
 
@@ -105,16 +106,34 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function redeemCollateralForDsc() external {}
+    function redeemCollateralForDsc(address tokenCollateralAddress, uint256 amountCollateral, uint256 amountDscToBurn) external 
+    {
+        burnDsc(amountDscToBurn);
+        redeemCollateral(tokenCollateralAddress, amountCollateral);
+    }
 
     // There health factor must be over 1 after the collateral pulled out
     //DRY: Don't repeat yourself
+    //CEI: checks, effects, interactions 
+    /**
+     *
+     * @param tokenCollateralAddress The address of the token to be redeemed
+     * @param amountCollateral The amount of the token to be redeemed
+     * This function burns dsc and redeems collateral 
+     */
     function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
-        external
+        public
         moreThanZero(amountCollateral)
         nonReentrant
     {
         s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+        //updating state so emit an event
+        emit CollaterialRemoved(msg.sender, tokenCollateralAddress, amountCollateral);
+        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
+        if (!success) {
+            revert DSCEngine__TransferFailed();
+        }
+        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     // Checks if the collateral value > DSC amount. Price feeds, value
@@ -132,6 +151,8 @@ contract DSCEngine is ReentrancyGuard {
             revert DSCEngine__MintFailed();
         }
     }
+
+    // $100 
 
     function getAccountCollateralValue(address user) public view returns (uint256 totalCollateralValueinUsd) {
         //loop through each collateral token, get the amount they have deposited, and map it to
@@ -190,7 +211,15 @@ contract DSCEngine is ReentrancyGuard {
         }
     }
 
-    function burnDsc() external {}
+    function burnDsc(uint256 amountToBeBurned) public moreThanZero(amountToBeBurned){
+        s_dscMinted[msg.sender] -= amountToBeBurned;
+        bool success = i_dsc.transferFrom(msg.sender, address(this), amountToBeBurned);
+        if(!success){
+            revert DSCEngine__TransferFailed();
+        }
+        i_dsc.burn(amountToBeBurned);
+        _revertIfHealthFactorIsBroken(msg.sender);  
+    }
     function liquidate() external {}
     function getHealthFactor() external {}
 }
