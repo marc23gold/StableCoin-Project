@@ -23,6 +23,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TransferFailed();
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintFailed();
+    error DSCEngine__HealthFactorOK();
 
     //modifiers
     modifier moreThanZero(uint256 amount) {
@@ -38,7 +39,8 @@ contract DSCEngine is ReentrancyGuard {
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50; //200% overcollataralized
     uint256 private constant LIQUIDATION_PRECISION = 100;
-    uint256 private constant MIN_HEALTH_FACTOR = 1; //1 is the minimum health factor
+    uint256 private constant MIN_HEALTH_FACTOR = 1e18; //1 is the minimum health factor
+    uint256 private constant LIQUDATION_BONUS = 10; //10% BONUS since we are diving by 100 in the operation 
 
     mapping(address token => address priceFeed) private s_priceFeeds;
     mapping(address user => mapping(address => uint256 amount)) private s_collateralDeposited;
@@ -220,6 +222,44 @@ contract DSCEngine is ReentrancyGuard {
         i_dsc.burn(amountToBeBurned);
         _revertIfHealthFactorIsBroken(msg.sender);  
     }
-    function liquidate() external {}
+
+    //if someone is almost undercollateralized, they can be liquidated and you will be rewarded
+    /**
+     * 
+     * @param collaterial collateral to be liquidated
+     * @param userToLiquidate user that is being liquidated
+     * @param debtCovered debt that's being covered by the 
+     * @notice You can partially liquidate a user 
+     * @notice You will get a liquidation bonus for taking the users funds
+     * @notice This function working assumes the protocol is overcollateralized by 200%
+     */
+    function liquidate(address collaterial, address userToLiquidate, uint256 debtCovered) external 
+    moreThanZero(debtCovered)
+     nonReentrant{
+        //need to check health factor of the user (checks)
+        uint256 startingHealthFactor = _healthFactor(userToLiquidate);
+        if(startingHealthFactor >= MIN_HEALTH_FACTOR) {
+            revert DSCEngine__HealthFactorOK();
+        }
+        //Burn there DSC debts and take their collateral 
+        //Bad User: $140, $100 DSC 
+        //DebtToCover: $100
+        // $100 DSC == ??? ETH
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collaterial, debtCovered);
+        //Give the liquidator a 10% bonus along with the collateral
+        //We are giving the liquidator $110 of WETH for 100 DSC
+        //We should implement a feature to liquidate in the event the protocol is insolvent 
+        //And sweep extra amounts into a treasury 
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUDATION_BONUS) / LIQUIDATION_PRECISION;
+
+    }
+
+    function getTokenAmountFromUsd(address token, uint256 usdAmountInWei) public view returns(uint256){
+        //price of eth or the token
+        //USD amount in wei divided by price 
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
+        (, int256 price,,,) = priceFeed.latestRoundData();
+        return (usdAmountInWei * PRECISION) / (uint256(price)* ADDITIONAL_FEED_PRECISION);
+    }
     function getHealthFactor() external {}
 }
