@@ -24,6 +24,7 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
     error DSCEngine__MintFailed();
     error DSCEngine__HealthFactorOK();
+    error DSCEngine__HealthFactorNotImproved();
 
     //modifiers
     modifier moreThanZero(uint256 amount) {
@@ -47,7 +48,7 @@ contract DSCEngine is ReentrancyGuard {
     mapping(address user => uint256 amountDscMinted) private s_dscMinted;
 
     event CollaterialDeposited(address indexed user, address indexed token, uint256 indexed amountCollateral);
-    event CollaterialRemoved(address indexed user, address indexed token, uint256 indexed amountCollateral);
+    event CollaterialRemoved(address indexed redeemedFrom, address indexed redeemedTo, address indexed token, uint256  amountCollateral);
 
     StableCoin private immutable i_dsc;
 
@@ -128,14 +129,19 @@ contract DSCEngine is ReentrancyGuard {
         moreThanZero(amountCollateral)
         nonReentrant
     {
-        s_collateralDeposited[msg.sender][tokenCollateralAddress] -= amountCollateral;
+        _redeemCollateral(tokenCollateralAddress, amountCollateral, msg.sender, msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
+
+    function _redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral, address from, address to
+    ) private  {
+           s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
         //updating state so emit an event
-        emit CollaterialRemoved(msg.sender, tokenCollateralAddress, amountCollateral);
-        bool success = IERC20(tokenCollateralAddress).transfer(msg.sender, amountCollateral);
+        emit CollaterialRemoved(from,to, tokenCollateralAddress, amountCollateral);
+        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
         if (!success) {
             revert DSCEngine__TransferFailed();
         }
-        _revertIfHealthFactorIsBroken(msg.sender);
     }
 
     // Checks if the collateral value > DSC amount. Price feeds, value
@@ -223,6 +229,19 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);  
     }
 
+    /**
+     * 
+     * @dev low-level internal fucntion do not call unless function is checked with health factor 
+     */
+
+    function _burnDsc(uint256 amountToBurn, address onBehalfOf, address dscFrom) private {
+         s_dscMinted[onBehalfOf] -= amountToBurn;
+        bool success = i_dsc.transferFrom(dscFrom, address(this), amountToBurn);
+        if(!success){
+            revert DSCEngine__TransferFailed();
+        }
+        i_dsc.burn(amountToBurn); 
+    }
     //if someone is almost undercollateralized, they can be liquidated and you will be rewarded
     /**
      * 
@@ -252,6 +271,14 @@ contract DSCEngine is ReentrancyGuard {
         //And sweep extra amounts into a treasury 
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUDATION_BONUS) / LIQUIDATION_PRECISION;
         uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        _redeemCollateral(collaterial, totalCollateralToRedeem, userToLiquidate, msg.sender);
+        _burnDsc(debtCovered, userToLiquidate, msg.sender);
+
+        uint256 endingHealthFactor = _healthFactor(userToLiquidate);
+        if(endingHealthFactor <= startingHealthFactor){
+            revert DSCEngine__HealthFactorNotImproved();
+        }
+        _revertIfHealthFactorIsBroken(msg.sender);
 
     }
 
