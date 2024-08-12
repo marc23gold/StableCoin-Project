@@ -26,6 +26,14 @@ contract DSCEngineTest is Test {
         (wethUsdPriceFeed,, weth,,) = config.activeNetworkConfig();
     }
 
+    address[] public tokenAddresses;
+    address[] public priceFeedAddresses;
+
+    //Constructor tests
+    function testRevertsIfTokenLengthDoesntMatchPriceFeeds() public{
+        
+    }
+
     // Price tests
     function testGetUsdValue() public {
         uint256 ethAmount = 15e18;
@@ -33,6 +41,7 @@ contract DSCEngineTest is Test {
         uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
         assertEq(actualUsd, expectedUsd);
     }
+
 
     // Deposit collateral tests
     function testRevertsIfCollateralZero() public {
