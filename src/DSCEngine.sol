@@ -290,4 +290,8 @@ contract DSCEngine is ReentrancyGuard {
         return (usdAmountInWei * PRECISION) / (uint256(price)* ADDITIONAL_FEED_PRECISION);
     }
     function getHealthFactor() external {}
+
+    function getAccountInformation(address user) external view returns(uint256 totalDscMinted, uint256 collaterialValueInUsd){
+       (totalDscMinted, collaterialValueInUsd) = _getAccountInformation(msg.sender);
+    }
 }
