@@ -16,6 +16,7 @@ import {DSCEngine} from "../../src/DSCEngine.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {StableCoin} from "../../src/StableCoin.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Handler} from "./Handler.t.sol";
 
 contract Invariants is StdInvariant,Test {
     DeployDSC deployer;
@@ -24,13 +25,16 @@ contract Invariants is StdInvariant,Test {
     HelperConfig config;
     address weth;
     address wbtc;
+    Handler handler;
 
     function setUp() public {
         deployer = new DeployDSC();
         (dsc, dsce, config) = deployer.run();
        (,,(weth), (wbtc),) = config.activeNetworkConfig();
         //tells foundry go ahead and make this the contrat to run fuzz tests on
-        targetContract(address(dsce));
+        //targetContract(address(dsce));
+        handler = new Handler(dsce, dsc);
+        targetContract(address(handler));
         //don't call redeem collateral unless there's collateral to redeem 
     }
 
