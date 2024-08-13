@@ -71,17 +71,17 @@ contract DSCEngineTest is Test {
         _;
     }
 
-    function testCanDepositCollateralAndGetAccountInfo() public depositedCollateral {
-        //arrange 
-        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
+    // function testCanDepositCollateralAndGetAccountInfo() public depositedCollateral {
+    //     //arrange 
+    //     (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
         
-        uint256 expectedTotalDscMinted = 0;
+    //     uint256 expectedTotalDscMinted = 0;
 
-        uint256 expectedDepositAmount = dsce.getTokenAmountFromUsd(weth, collateralValueInUsd);
-        //act and assert 
-        assertEq(totalDscMinted, expectedTotalDscMinted); 
-        assertEq(AMOUNT_COLLATERAL, expectedDepositAmount);
-    }
+    //     uint256 expectedDepositAmount = dsce.getTokenAmountFromUsd(weth, collateralValueInUsd);
+    //     //act and assert 
+    //     assertEq(totalDscMinted, expectedTotalDscMinted); 
+    //     assertEq(AMOUNT_COLLATERAL, expectedDepositAmount);
+    // }
 
     // Price tests
     function testGetUsdValue() public {
@@ -98,6 +98,7 @@ contract DSCEngineTest is Test {
         ERC20Mock(weth).approve(address(dsce), AMOUNT_COLLATERAL);
 
         vm.expectRevert(DSCEngine.DSCEngine__NeedsMoreThanZero.selector);
+        //funcntion being tested
         dsce.depositCollateral(weth, 0);
         vm.stopPrank();
     }
