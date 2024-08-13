@@ -52,11 +52,4 @@ contract OpenInvariantsTest is StdInvariant,Test {
         console.log("weth value: ", wethValue);
         console.log("wbtc value: ", wbtcValue);
     }       
-
-    function statefulFuzz_depositCollateral(uint256 amount) public {
-        // Example of a function that Foundry can fuzz
-        vm.assume(amount > 0 && amount <= IERC20(weth).balanceOf(msg.sender));
-        IERC20(weth).approve(address(dsce), amount);
-        dsce.depositCollateral(weth, amount);
-    }
 }
