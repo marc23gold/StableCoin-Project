@@ -185,7 +185,7 @@ contract DSCEngine is ReentrancyGuard {
         //going to do some pricefeed stuff
         //get the price feed for the token and times the amount by the price
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.stalePriceCheck();
         //let's say 1 ETH = 1000 USD the returned value will be 1000 * 1e8
         return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
@@ -295,7 +295,7 @@ contract DSCEngine is ReentrancyGuard {
         //price of eth or the token
         //USD amount in wei divided by price
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
-        (, int256 price,,,) = priceFeed.latestRoundData();
+        (, int256 price,,,) = priceFeed.stalePriceCheck();
         return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
     }
 
