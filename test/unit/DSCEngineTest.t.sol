@@ -24,23 +24,23 @@ contract DSCEngineTest is Test {
     function setUp() public {
         deployer = new DeployDSC();
         (dsc, dsce, config) = deployer.run();
-        (wethUsdPriceFeed,btcUsdPriceFeed, weth,,) = config.activeNetworkConfig();
+        (wethUsdPriceFeed, btcUsdPriceFeed, weth,,) = config.activeNetworkConfig();
     }
 
     address[] public tokenAddresses;
     address[] public priceFeedAddresses;
 
-        //Constructor tests
-    function testRevertsIfTokenLengthDoesntMatchPriceFeeds() public{
-            //arrange
-            tokenAddresses.push(weth);
-            priceFeedAddresses.push(wethUsdPriceFeed); 
-            priceFeedAddresses.push(btcUsdPriceFeed);
-            // assert
-            vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesDoNotMatch.selector);
-            // act
-            new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
-        }
+    //Constructor tests
+    function testRevertsIfTokenLengthDoesntMatchPriceFeeds() public {
+        //arrange
+        tokenAddresses.push(weth);
+        priceFeedAddresses.push(wethUsdPriceFeed);
+        priceFeedAddresses.push(btcUsdPriceFeed);
+        // assert
+        vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesDoNotMatch.selector);
+        // act
+        new DSCEngine(tokenAddresses, priceFeedAddresses, address(dsc));
+    }
 
     //deposit collateral tests
 
@@ -54,7 +54,7 @@ contract DSCEngineTest is Test {
     }
 
     function testRevertsWithUnapprovedCollateral() public {
-        //arrange 
+        //arrange
         ERC20Mock ranToken = new ERC20Mock();
         vm.prank(USER);
         //assert (setup)
@@ -72,14 +72,14 @@ contract DSCEngineTest is Test {
     }
 
     // function testCanDepositCollateralAndGetAccountInfo() public depositedCollateral {
-    //     //arrange 
+    //     //arrange
     //     (uint256 totalDscMinted, uint256 collateralValueInUsd) = dsce.getAccountInformation(USER);
-        
+
     //     uint256 expectedTotalDscMinted = 0;
 
     //     uint256 expectedDepositAmount = dsce.getTokenAmountFromUsd(weth, collateralValueInUsd);
-    //     //act and assert 
-    //     assertEq(totalDscMinted, expectedTotalDscMinted); 
+    //     //act and assert
+    //     assertEq(totalDscMinted, expectedTotalDscMinted);
     //     assertEq(AMOUNT_COLLATERAL, expectedDepositAmount);
     // }
 
@@ -90,7 +90,6 @@ contract DSCEngineTest is Test {
         uint256 actualUsd = dsce.getUsdValue(weth, ethAmount);
         assertEq(actualUsd, expectedUsd);
     }
-
 
     // Deposit collateral tests
     function testRevertsIfCollateralZero() public {

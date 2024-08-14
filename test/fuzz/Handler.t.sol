@@ -16,7 +16,7 @@ contract Handler is Test {
     uint256 constant MAX_DEPOSIT = type(uint96).max;
     uint256 public timesMintIsCalled;
     address[] public usersWithCollateralDeposited;
-    MockV3Aggregator public ethUsdPriceFeed;    
+    MockV3Aggregator public ethUsdPriceFeed;
 
     constructor(DSCEngine _dscEngine, StableCoin _dsc) {
         dsce = _dscEngine;
@@ -27,11 +27,10 @@ contract Handler is Test {
         wbtc = ERC20Mock(collateralTokens[1]);
 
         ethUsdPriceFeed = MockV3Aggregator(dsce.getCollateralTokenPriceFeed(address(weth)));
-
     }
 
     function updateCollateralPrice(uint96 newPrice) public {
-        int256 newPriceInt = int256(uint(newPrice));
+        int256 newPriceInt = int256(uint256(newPrice));
         ethUsdPriceFeed.updateAnswer(newPriceInt);
     }
 
@@ -54,7 +53,7 @@ contract Handler is Test {
         vm.startPrank(sender);
         dsce.mintDsc(amount);
         vm.stopPrank();
-        // wil double push 
+        // wil double push
         usersWithCollateralDeposited.push(msg.sender);
     }
 
@@ -78,10 +77,10 @@ contract Handler is Test {
             return;
         }
         dsce.redeemCollateral(address(collateral), amountCollateral);
-    }   
+    }
 
-    //helper functions 
-    function _getCollateralFromSeed(uint256 collateralSeed) private view returns(ERC20Mock) {
+    //helper functions
+    function _getCollateralFromSeed(uint256 collateralSeed) private view returns (ERC20Mock) {
         if (collateralSeed % 2 == 0) {
             return weth;
         }

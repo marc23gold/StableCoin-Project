@@ -1,11 +1,10 @@
-
 //SPDX-License-Identifier: MIT
 
 //Will have out invarients: properties of the system that should always hold
 //Handler is going to narrow the way we can call functions
 //What are our invarents?
-//1. The total supply of DSC should be less than the total value of collateral 
-//2. Getter view functions should never revoke <- evergreen invariant 
+//1. The total supply of DSC should be less than the total value of collateral
+//2. Getter view functions should never revoke <- evergreen invariant
 
 pragma solidity ^0.8.0;
 
@@ -18,7 +17,7 @@ import {StableCoin} from "../../src/StableCoin.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Handler} from "./Handler.t.sol";
 
-contract Invariants is StdInvariant,Test {
+contract Invariants is StdInvariant, Test {
     DeployDSC deployer;
     DSCEngine dsce;
     StableCoin dsc;
@@ -30,18 +29,18 @@ contract Invariants is StdInvariant,Test {
     function setUp() public {
         deployer = new DeployDSC();
         (dsc, dsce, config) = deployer.run();
-       (,,(weth), (wbtc),) = config.activeNetworkConfig();
+        (,, (weth), (wbtc),) = config.activeNetworkConfig();
         //tells foundry go ahead and make this the contrat to run fuzz tests on
         //targetContract(address(dsce));
         handler = new Handler(dsce, dsc);
         targetContract(address(handler));
-        //don't call redeem collateral unless there's collateral to redeem 
+        //don't call redeem collateral unless there's collateral to redeem
     }
 
     function invariant_protocolMustHaveMoreValueThanTotalSupply() public {
-        //arrange   
-            //get value of all the collateral in the protocol 
-            //compare it to all the debt (dsc)
+        //arrange
+        //get value of all the collateral in the protocol
+        //compare it to all the debt (dsc)
         uint256 totalSupply = dsc.totalSupply();
         //total amount of weth sent to the contract
         uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsce));
@@ -51,13 +50,13 @@ contract Invariants is StdInvariant,Test {
         uint256 wethValue = dsce.getUsdValue(weth, totalWethDeposited);
         uint256 wbtcValue = dsce.getUsdValue(wbtc, totalWbtcDeposited);
 
-        //assert 
+        //assert
         assert(wethValue + wbtcValue >= totalSupply);
 
         console.log("weth value: ", wethValue);
         console.log("wbtc value: ", wbtcValue);
         console.log("times mint is called: ", handler.timesMintIsCalled());
-    }       
+    }
 
     function invariant_getterFunctionsShouldNeverRevoke() public {
         //arrange
@@ -65,7 +64,5 @@ contract Invariants is StdInvariant,Test {
         //assert
         dsce.getPrecision();
         dsce.getCollateralTokens();
-        
     }
-
 }
