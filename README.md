@@ -1,6 +1,6 @@
 # Description
 
-This is a decentralized coin project and defi protocol. This project can deploy a smart contract onto the Ethereum blockchain and act as the "backend" to the defi protocol. 
+This is a decentralized coin project and defi protocol. This project can deploy a smart contract onto the Ethereum blockchain and act as the backend to the defi protocol. 
 
 ## Installation
 
