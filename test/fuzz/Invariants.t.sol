@@ -56,5 +56,16 @@ contract Invariants is StdInvariant,Test {
 
         console.log("weth value: ", wethValue);
         console.log("wbtc value: ", wbtcValue);
+        console.log("times mint is called: ", handler.timesMintIsCalled());
     }       
+
+    function invariant_getterFunctionsShouldNeverRevoke() public {
+        //arrange
+        //act
+        //assert
+        dsce.getPrecision();
+        dsce.getCollateralTokens();
+        
+    }
+
 }
