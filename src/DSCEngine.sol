@@ -14,6 +14,7 @@ import {ReentrancyGuard} from "lib/openzeppelin-contracts/contracts/utils/Reentr
 import {IERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from
     "lib/chainlink-brownie-contracts/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {OracleLib} from "./library/OracleLib.sol";
 
 contract DSCEngine is ReentrancyGuard {
     //errors
@@ -25,6 +26,9 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__MintFailed();
     error DSCEngine__HealthFactorOK();
     error DSCEngine__HealthFactorNotImproved();
+
+    //types
+    using OracleLib for AggregatorV3Interface;
 
     //modifiers
     modifier moreThanZero(uint256 amount) {
