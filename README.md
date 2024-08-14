@@ -13,7 +13,7 @@ curl -L https://foundry.paradigm.xyz | bash
 Then clone this repo using the git clone command:
 
 ```git
-git clone 
+git clone https://github.com/marc23gold/StableCoin-Project.git
 ```
 
 
